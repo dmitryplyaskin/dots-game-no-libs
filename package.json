@@ -1,0 +1,12 @@
+{
+  "name": "dots-game",
+  "version": "0.0.1",
+  "description": "dots game pure js",
+  "main": "index.js",
+  "repository": "https://github.com/dmitryplyaskin/dots-game.git",
+  "author": "My name is Dmitry <dima28rus97@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "parcel": "^2.0.0-alpha.3.2"
+  }
+}
