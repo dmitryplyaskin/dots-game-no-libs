@@ -1,4 +1,5 @@
-import { using, h, nodeStack } from './render/index'
+import { using, h, nodeStack } from './render'
+import { createUnit } from './reactive'
 
 const main = () => {
 	const node = document.getElementById('app') as HTMLElement
@@ -11,4 +12,10 @@ const main = () => {
 }
 main()
 
-console.log(nodeStack)
+const fn = (a: any) => console.log(a)
+
+const testUnit = createUnit()
+testUnit.on('test', fn)
+testUnit.emit('test', { a: 12 })
+testUnit.emit('test', { a: 13 })
+testUnit.emit('test', { a: 14 })
