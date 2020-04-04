@@ -1,5 +1,7 @@
 // type AnyObject = { [key: string]: any }
 
+import { createWatch } from './utils'
+
 interface Event<T> {
 	(value: T): void
 	subscriber: any[]
@@ -53,15 +55,7 @@ export function createStore<T>(initialValue: T): Store {
 			})
 		}
 	}
-	store.watch = (fn: (p: T) => void) => {
-		const us = store.subscribers
-		if (!us.has('watch')) {
-			us.set('watch', { data: [] })
-		}
-		us.get('watch').data.push(fn)
-		us.get('watch').data.forEach((fn: any) => fn(state))
-		return
-	}
+	store.watch = createWatch(store.subscribers, 'store', state)
 	store.getState = () => {
 		return state
 	}
@@ -79,14 +73,7 @@ export function createEvent<T>(): Event<T> {
 	}
 	event.subscribers = new Map()
 	event.subscriber = []
-	event.watch = fn => {
-		const es = event.subscribers
-		if (!es.has('watch')) {
-			es.set('watch', { data: [] })
-		}
-		es.get('watch').data.push(fn)
-		return
-	}
+	event.watch = createWatch(event.subscribers, 'event')
 
 	// event.id = Symbol('event')
 	return event
