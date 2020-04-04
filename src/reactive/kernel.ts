@@ -1,39 +1,78 @@
-type Unit = {
-	on: (e: any, fn: any) => Unit
-	emit: (e: any, fn: any) => void
+// type AnyObject = { [key: string]: any }
+
+interface Event<T> {
+	(value: T): void
+	subscriber: any[]
+	// id: symbol
+	[key: string]: any
 }
 
-type Node = {
-	type: 'event' | 'store'
+type Unit<T = any> = {
+	subscribers: Map<any, any>
+	on: (e: Event<T>, fn: (v: any) => T) => Unit<T>
+	emit: (e: any) => (fn: any) => void
+	watch: (v: T) => void
 }
 
-const createNode = ({ type }: Node) => {}
+// type Node = {
+// 	type: 'event' | 'store'
+// }
 
-export function createUnit(): Unit {
-	let listeners: { [key: string]: any } = {}
+export function createUnit<T>(): Unit {
 	const unit: Unit = {} as Unit
-	unit.on = (e: any, fn: any) => {
-		if (!listeners[e]) {
-			listeners[e] = {}
-			listeners[e].data = []
+	unit.subscribers = new Map()
+	unit.on = (e: Event<T>, fn: (v: any) => T) => {
+		const us = unit.subscribers
+		if (!us.has(e)) {
+			us.set(e, { data: [] })
 		}
-		listeners[e].data.push(fn)
+		us.get(e).data.push(fn)
+		e.subscriber.push(unit.emit(e))
+
 		return unit
 	}
-	unit.emit = (e: any, data: any) => {
-		if (!listeners[e]?.data) {
+	unit.emit = <P>(e: Event<T>) => {
+		const us = unit.subscribers
+		if (!us.get(e)?.data) {
 			return
 		}
-		listeners[e].data.forEach((listener: any) => {
-			listener(data)
-		})
+		return (data: (v: P) => T) => {
+			us.get(e).data.forEach((fn: any) => {
+				fn(data)
+			})
+			if (us.has('watch')) {
+				us.get('watch').data.forEach((fn: any) => fn(data))
+			}
+		}
+	}
+	unit.watch = (fn: (p: T) => void) => {
+		const us = unit.subscribers
+		if (!us.has('watch')) {
+			us.set('watch', { data: [] })
+		}
+		us.get('watch').data.push(fn)
+		return
 	}
 	return unit
 }
-// function createStore<T>(initValue: T){
-//   let init = initValue
-//   let unit: {[key: string]: any} = {}
-//   unit.on = (event, fn) => {
 
-//   }
-// }
+export function createEvent<T>(): Event<T> {
+	const event: Event<T> = (value: T) => {
+		event.subscriber.forEach((fn: (value: T) => void) => {
+			fn(value)
+		})
+	}
+	event.subscriber = []
+	// event.id = Symbol('event')
+	return event
+}
+
+const u = createUnit<string>()
+const e = createEvent<string>()
+u.on(e, v => v)
+
+u.watch(e => console.log('wow-1', e))
+
+e('1')
+e('2')
+e('3')

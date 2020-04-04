@@ -12,10 +12,10 @@ const main = () => {
 }
 main()
 
-const fn = (a: any) => console.log(a)
+// const fn = (a: any) => a
 
 const testUnit = createUnit()
-testUnit.on('test', fn)
-testUnit.emit('test', { a: 12 })
-testUnit.emit('test', { a: 13 })
-testUnit.emit('test', { a: 14 })
+// testUnit.on(fn, console.log)
+// testUnit.emit(fn, { a: 12 })
+// testUnit.emit('test', { a: 13 })
+// testUnit.emit('test', { a: 14 })
