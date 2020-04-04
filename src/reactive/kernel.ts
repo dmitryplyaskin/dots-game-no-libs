@@ -3,6 +3,8 @@
 interface Event<T> {
 	(value: T): void
 	subscriber: any[]
+	subscribers: Map<any, any>
+	watch: (v: T) => void
 	// id: symbol
 	[key: string]: any
 }
@@ -61,8 +63,21 @@ export function createEvent<T>(): Event<T> {
 		event.subscriber.forEach((fn: (value: T) => void) => {
 			fn(value)
 		})
+		if (event.subscribers.has('watch')) {
+			event.subscribers.get('watch').data.forEach((fn: any) => fn(value))
+		}
 	}
+	event.subscribers = new Map()
 	event.subscriber = []
+	event.watch = fn => {
+		const es = event.subscribers
+		if (!es.has('watch')) {
+			es.set('watch', { data: [] })
+		}
+		es.get('watch').data.push(fn)
+		return
+	}
+
 	// event.id = Symbol('event')
 	return event
 }
@@ -71,7 +86,8 @@ const u = createUnit<string>()
 const e = createEvent<string>()
 u.on(e, v => v)
 
-u.watch(e => console.log('wow-1', e))
+u.watch(e => console.log('unit', e))
+e.watch(x => console.log('event', x))
 
 e('1')
 e('2')
