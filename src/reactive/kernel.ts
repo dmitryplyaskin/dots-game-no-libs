@@ -22,7 +22,7 @@ type Store<T = any> = {
 // }
 
 export function createStore<T>(initialValue: T): Store {
-	const state = initialValue
+	let state = initialValue
 	const store: Store = {} as Store
 	store.subscribers = new Map()
 	store.on = (e: Event<T>, fn: (v: any) => T) => {
@@ -35,20 +35,22 @@ export function createStore<T>(initialValue: T): Store {
 
 		return store
 	}
-	store.emit = <P>(e: Event<T>) => {
+	store.emit = (e: Event<T>) => {
 		const us = store.subscribers
 		if (!us.get(e)?.data) {
 			return
 		}
-		return (data: (v: P) => T) => {
+		return (data: T) => {
 			us.get(e).data.forEach((fn: any) => {
-				if (data !== store) {
-					fn(data)
+				if (data !== state) {
+					state = fn(data)
+					if (us.has('watch')) {
+						us.get('watch').data.forEach((fn: any) => {
+							fn(data)
+						})
+					}
 				}
 			})
-			if (us.has('watch')) {
-				us.get('watch').data.forEach((fn: any) => fn(data))
-			}
 		}
 	}
 	store.watch = (fn: (p: T) => void) => {
@@ -97,5 +99,5 @@ $store.on(event, v => v)
 $store.watch(e => console.log('store', e))
 
 event('1')
-event('2')
+event('1')
 event('3')
