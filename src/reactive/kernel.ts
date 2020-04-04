@@ -9,53 +9,61 @@ interface Event<T> {
 	[key: string]: any
 }
 
-type Unit<T = any> = {
+type Store<T = any> = {
 	subscribers: Map<any, any>
-	on: (e: Event<T>, fn: (v: any) => T) => Unit<T>
+	on: (e: Event<T>, fn: (v: any) => T) => Store<T>
 	emit: (e: any) => (fn: any) => void
 	watch: (v: T) => void
+	getState: () => T
 }
 
 // type Node = {
 // 	type: 'event' | 'store'
 // }
 
-export function createUnit<T>(): Unit {
-	const unit: Unit = {} as Unit
-	unit.subscribers = new Map()
-	unit.on = (e: Event<T>, fn: (v: any) => T) => {
-		const us = unit.subscribers
+export function createStore<T>(initialValue: T): Store {
+	const state = initialValue
+	const store: Store = {} as Store
+	store.subscribers = new Map()
+	store.on = (e: Event<T>, fn: (v: any) => T) => {
+		const us = store.subscribers
 		if (!us.has(e)) {
 			us.set(e, { data: [] })
 		}
 		us.get(e).data.push(fn)
-		e.subscriber.push(unit.emit(e))
+		e.subscriber.push(store.emit(e))
 
-		return unit
+		return store
 	}
-	unit.emit = <P>(e: Event<T>) => {
-		const us = unit.subscribers
+	store.emit = <P>(e: Event<T>) => {
+		const us = store.subscribers
 		if (!us.get(e)?.data) {
 			return
 		}
 		return (data: (v: P) => T) => {
 			us.get(e).data.forEach((fn: any) => {
-				fn(data)
+				if (data !== store) {
+					fn(data)
+				}
 			})
 			if (us.has('watch')) {
 				us.get('watch').data.forEach((fn: any) => fn(data))
 			}
 		}
 	}
-	unit.watch = (fn: (p: T) => void) => {
-		const us = unit.subscribers
+	store.watch = (fn: (p: T) => void) => {
+		const us = store.subscribers
 		if (!us.has('watch')) {
 			us.set('watch', { data: [] })
 		}
 		us.get('watch').data.push(fn)
+		us.get('watch').data.forEach((fn: any) => fn(state))
 		return
 	}
-	return unit
+	store.getState = () => {
+		return state
+	}
+	return store
 }
 
 export function createEvent<T>(): Event<T> {
@@ -82,13 +90,12 @@ export function createEvent<T>(): Event<T> {
 	return event
 }
 
-const u = createUnit<string>()
-const e = createEvent<string>()
-u.on(e, v => v)
+const $store = createStore<string>('asd')
+const event = createEvent<string>()
+$store.on(event, v => v)
 
-u.watch(e => console.log('unit', e))
-e.watch(x => console.log('event', x))
+$store.watch(e => console.log('store', e))
 
-e('1')
-e('2')
-e('3')
+event('1')
+event('2')
+event('3')
