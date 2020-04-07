@@ -17,6 +17,7 @@ type Store<T = any> = {
 	emit: (e: any) => (fn: any) => void
 	watch: (v: T) => void
 	getState: () => T
+	map: <P>(fn: (store: T) => P) => Store<P>
 }
 
 // type Node = {
@@ -27,6 +28,7 @@ export function createStore<T>(initialValue: T): Store {
 	let state = initialValue
 	const store: Store = {} as Store
 	store.subscribers = new Map()
+	store.subscriber = []
 	store.on = (e: Event<T>, fn: (v: any) => T) => {
 		const us = store.subscribers
 		if (!us.has(e)) {
@@ -59,6 +61,19 @@ export function createStore<T>(initialValue: T): Store {
 	store.getState = () => {
 		return state
 	}
+	store.map = <P>(fn: (store: T) => P) => {
+		let value = store.getState()
+		if (value === undefined) value = null
+		const innerStore = createStore<P>(fn(value))
+
+		const ss = store.subscribers
+		if (!ss.has('map')) {
+			ss.set('map', { data: [] })
+		}
+		ss.get('map').data.push(fn)
+
+		return innerStore
+	}
 	return store
 }
 
@@ -79,12 +94,12 @@ export function createEvent<T>(): Event<T> {
 	return event
 }
 
-const $store = createStore<string>('asd')
-const event = createEvent<string>()
+const $store = createStore<number>(0)
+const event = createEvent<number>()
 $store.on(event, v => v)
 
 $store.watch(e => console.log('store', e))
-
-event('1')
-event('1')
-event('3')
+$store.map(x => x + 1).watch(x => console.log('MAP', x))
+event(1)
+event(2)
+event(3)
